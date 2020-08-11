@@ -22,9 +22,9 @@ node {
 }
 ----
 
-The second invocation of `env` will not list `baz` or most Jenkins-contributed environment variables, like `BUILD_ID` or `NODE_NAME`.
-The variables `foo` (from the surrounding `withEnv` block), `WORKSPACE` (contributed by Jenkins), a few essential Jenkins-contributed variables, as well as system-contributed variables (like `PATH`) will still be available.
-System-contributed environment variables that are not set to be kept will be reset to their default value (`PATH` in the example) instead of being undefined.
+* The second invocation of `env` will not list `baz` or most Jenkins-contributed environment variables, like `BUILD_ID` or `NODE_NAME`.
+* The variables `foo` (from the surrounding `withEnv` block), `WORKSPACE` (contributed by Jenkins), a few essential Jenkins-contributed variables, as well as system-contributed variables (like `PATH`) will still be available.
+* System-contributed environment variables that are not set to be kept will be reset to their default value (`PATH` in the example) instead of being undefined.
 
 ////
 
