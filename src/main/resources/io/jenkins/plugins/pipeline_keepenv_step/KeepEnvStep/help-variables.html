@@ -1,4 +1,6 @@
 <div>
     A list of environment variables to retain.
-    All the other variables proposed by Jenkins will be filtered out for the block.
+    Specify one variable name per line.
+    All other environment variables added to the Pipeline by Jenkins will be removed from the block.
+    System-contributed environment variables like <code>PATH</code> will be reset to their default value.
 </div>
