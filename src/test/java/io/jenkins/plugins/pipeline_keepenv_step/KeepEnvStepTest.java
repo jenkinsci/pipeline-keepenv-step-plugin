@@ -23,7 +23,13 @@
  */
 package io.jenkins.plugins.pipeline_keepenv_step;
 
+import static org.hamcrest.MatcherAssert.*;
+import static org.junit.Assert.assertEquals;
+
 import com.google.common.base.Predicates;
+import java.util.Arrays;
+import java.util.Collections;
+import java.util.List;
 import org.hamcrest.Matchers;
 import org.jenkinsci.plugins.workflow.actions.ArgumentsAction;
 import org.jenkinsci.plugins.workflow.cps.CpsFlowDefinition;
@@ -40,13 +46,6 @@ import org.junit.Test;
 import org.jvnet.hudson.test.BuildWatcher;
 import org.jvnet.hudson.test.JenkinsRule;
 
-import java.util.Arrays;
-import java.util.Collections;
-import java.util.List;
-
-import static org.hamcrest.MatcherAssert.*;
-import static org.junit.Assert.assertEquals;
-
 public class KeepEnvStepTest {
 
     @ClassRule
@@ -59,28 +58,28 @@ public class KeepEnvStepTest {
     public void keepOnlyThePassedVariables() throws Exception {
         WorkflowJob p = j.jenkins.createProject(WorkflowJob.class, "p");
         p.setDefinition(new CpsFlowDefinition(
-                "env.A = 'value-a'\n" +
-                        "env.B = 'value-b'\n" +
-                        "env.C = 'value-c'\n" +
-                        "node {\n" +
-                        "  isUnix() ? sh('echo a-b-c-1 A=$A B=$B C=$C D=$D end') : bat('echo a-b-c-1 A=%A% B=%B% C=%C% D=%D% end')\n" +
-                        "  keepEnv(['A', 'B']){\n" +
-                        "    isUnix() ? sh('echo only-a-b A=$A B=$B C=$C D=$D end') : bat('echo only-a-b A=%A% B=%B% C=%C% D=%D% end')\n" +
-                        "    withEnv(['D=value-d']){\n" +
-                        "      isUnix() ? sh('echo with-d A=$A B=$B C=$C D=$D end') : bat('echo with-d A=%A% B=%B% C=%C% D=%D% end')\n" +
-                        "      keepEnv(['B', 'D']){\n" +
-                        "        isUnix() ? sh('echo only-b-d A=$A B=$B C=$C D=$D end') : bat('echo only-b-d A=%A% B=%B% C=%C% D=%D% end')\n" +
-                        "      }\n" +
-                        "    }\n" +
-                        "    keepEnv(['A']){\n" +
-                        "      isUnix() ? sh('echo only-a A=$A B=$B C=$C D=$D end') : bat('echo only-a A=%A% B=%B% C=%C% D=%D% end')\n" +
-                        "    }\n" +
-                        "    keepEnv(['B']){\n" +
-                        "      isUnix() ? sh('echo only-b A=$A B=$B C=$C D=$D end') : bat('echo only-b A=%A% B=%B% C=%C% D=%D% end')\n" +
-                        "    }\n" +
-                        "  }\n" +
-                        "  isUnix() ? sh('echo a-b-c-2 A=$A B=$B C=$C D=$D end') : bat('echo a-b-c-2 A=%A% B=%B% C=%C% D=%D% end')\n" +
-                        "}", true));
+                "env.A = 'value-a'\n" + "env.B = 'value-b'\n"
+                        + "env.C = 'value-c'\n"
+                        + "node {\n"
+                        + "  isUnix() ? sh('echo a-b-c-1 A=$A B=$B C=$C D=$D end') : bat('echo a-b-c-1 A=%A% B=%B% C=%C% D=%D% end')\n"
+                        + "  keepEnv(['A', 'B']){\n"
+                        + "    isUnix() ? sh('echo only-a-b A=$A B=$B C=$C D=$D end') : bat('echo only-a-b A=%A% B=%B% C=%C% D=%D% end')\n"
+                        + "    withEnv(['D=value-d']){\n"
+                        + "      isUnix() ? sh('echo with-d A=$A B=$B C=$C D=$D end') : bat('echo with-d A=%A% B=%B% C=%C% D=%D% end')\n"
+                        + "      keepEnv(['B', 'D']){\n"
+                        + "        isUnix() ? sh('echo only-b-d A=$A B=$B C=$C D=$D end') : bat('echo only-b-d A=%A% B=%B% C=%C% D=%D% end')\n"
+                        + "      }\n"
+                        + "    }\n"
+                        + "    keepEnv(['A']){\n"
+                        + "      isUnix() ? sh('echo only-a A=$A B=$B C=$C D=$D end') : bat('echo only-a A=%A% B=%B% C=%C% D=%D% end')\n"
+                        + "    }\n"
+                        + "    keepEnv(['B']){\n"
+                        + "      isUnix() ? sh('echo only-b A=$A B=$B C=$C D=$D end') : bat('echo only-b A=%A% B=%B% C=%C% D=%D% end')\n"
+                        + "    }\n"
+                        + "  }\n"
+                        + "  isUnix() ? sh('echo a-b-c-2 A=$A B=$B C=$C D=$D end') : bat('echo a-b-c-2 A=%A% B=%B% C=%C% D=%D% end')\n"
+                        + "}",
+                true));
         WorkflowRun b = j.assertBuildStatusSuccess(p.scheduleBuild2(0));
         j.assertLogContains("a-b-c-1 A=value-a B=value-b C=value-c D= end", b);
         j.assertLogContains("only-a-b A=value-a B=value-b C= D= end", b);
@@ -89,7 +88,12 @@ public class KeepEnvStepTest {
         j.assertLogContains("only-a A=value-a B= C= D= end", b);
         j.assertLogContains("only-b A= B=value-b C= D= end", b);
         j.assertLogContains("a-b-c-2 A=value-a B=value-b C=value-c D= end", b);
-        List<FlowNode> coreStepNodes = new DepthFirstScanner().filteredNodes(b.getExecution(), Predicates.and(new NodeStepTypePredicate("keepEnv"), n -> n instanceof StepStartNode && !((StepStartNode) n).isBody()));
+        List<FlowNode> coreStepNodes = new DepthFirstScanner()
+                .filteredNodes(
+                        b.getExecution(),
+                        Predicates.and(
+                                new NodeStepTypePredicate("keepEnv"),
+                                n -> n instanceof StepStartNode && !((StepStartNode) n).isBody()));
         assertThat(coreStepNodes, Matchers.hasSize(4));
         assertEquals("A, B", ArgumentsAction.getStepArgumentsAsString(coreStepNodes.get(3)));
         assertEquals("B, D", ArgumentsAction.getStepArgumentsAsString(coreStepNodes.get(2)));
@@ -105,6 +109,10 @@ public class KeepEnvStepTest {
     }
 
     private void configRoundTrip(List<String> variablesToKeep) throws Exception {
-        assertEquals(variablesToKeep, new StepConfigTester(j).configRoundTrip(new KeepEnvStep(variablesToKeep)).getVariables());
+        assertEquals(
+                variablesToKeep,
+                new StepConfigTester(j)
+                        .configRoundTrip(new KeepEnvStep(variablesToKeep))
+                        .getVariables());
     }
 }
