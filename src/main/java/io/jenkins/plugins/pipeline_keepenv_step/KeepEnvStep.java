@@ -26,6 +26,12 @@ package io.jenkins.plugins.pipeline_keepenv_step;
 import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 import hudson.EnvVars;
 import hudson.Extension;
+import java.util.ArrayList;
+import java.util.Collection;
+import java.util.Collections;
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
 import net.sf.json.JSONObject;
 import org.jenkinsci.plugins.workflow.steps.AbstractStepExecutionImpl;
 import org.jenkinsci.plugins.workflow.steps.BodyExecutionCallback;
@@ -36,13 +42,6 @@ import org.jenkinsci.plugins.workflow.steps.StepDescriptor;
 import org.jenkinsci.plugins.workflow.steps.StepExecution;
 import org.kohsuke.stapler.DataBoundConstructor;
 import org.kohsuke.stapler.StaplerRequest;
-
-import java.util.ArrayList;
-import java.util.Collection;
-import java.util.Collections;
-import java.util.List;
-import java.util.Map;
-import java.util.Set;
 
 /**
  * All the variables not provided in the parameter will be filtered out for the enclosed block
@@ -72,8 +71,8 @@ public class KeepEnvStep extends Step {
 
         private static final long serialVersionUID = 1;
 
-        @SuppressFBWarnings(value="SE_TRANSIENT_FIELD_NOT_RESTORED", justification="Only used when starting.")
-        private transient final List<String> variables;
+        @SuppressFBWarnings(value = "SE_TRANSIENT_FIELD_NOT_RESTORED", justification = "Only used when starting.")
+        private final transient List<String> variables;
 
         Execution(List<String> variables, StepContext context) {
             super(context);
@@ -82,11 +81,10 @@ public class KeepEnvStep extends Step {
 
         @Override
         public boolean start() throws Exception {
-            getContext().newBodyInvoker()
+            getContext()
+                    .newBodyInvoker()
                     .withContext(EnvironmentExpander.merge(
-                            getContext().get(EnvironmentExpander.class),
-                            new FilteredEnvironmentExpander(variables)
-                    ))
+                            getContext().get(EnvironmentExpander.class), new FilteredEnvironmentExpander(variables)))
                     .withCallback(BodyExecutionCallback.wrap(getContext()))
                     .start();
             return false;
