@@ -1,2 +1,0 @@
-_extends: .github
-tag-template: pipeline-keepenv-step-$NEXT_MINOR_VERSION
