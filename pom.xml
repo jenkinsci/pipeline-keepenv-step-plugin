@@ -9,7 +9,7 @@
   </parent>
   <groupId>io.jenkins.plugins</groupId>
   <artifactId>pipeline-keepenv-step</artifactId>
-  <version>${revision}${changelist}</version>
+  <version>${revision}.${changelist}</version>
   <packaging>hpi</packaging>
   <name>Pipeline: Keep Environment Step Plugin</name>
   <url>https://github.com/jenkinsci/${project.artifactId}-plugin</url>
@@ -28,8 +28,8 @@
     <url>https://github.com/jenkinsci/${project.artifactId}-plugin</url>
   </scm>
   <properties>
-    <revision>1.2</revision>
-    <changelist>-SNAPSHOT</changelist>
+    <revision>1</revision>
+    <changelist>999999-SNAPSHOT</changelist>
     <jenkins.version>2.479.3</jenkins.version>
     <spotless.check.skip>false</spotless.check.skip>
   </properties>
