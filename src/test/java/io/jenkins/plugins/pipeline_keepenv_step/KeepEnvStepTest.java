@@ -23,7 +23,7 @@
  */
 package io.jenkins.plugins.pipeline_keepenv_step;
 
-import static org.hamcrest.MatcherAssert.*;
+import static org.hamcrest.MatcherAssert.assertThat;
 import static org.junit.Assert.assertEquals;
 
 import com.google.common.base.Predicates;
