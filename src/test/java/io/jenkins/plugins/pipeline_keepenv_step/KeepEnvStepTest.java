@@ -24,13 +24,13 @@
 package io.jenkins.plugins.pipeline_keepenv_step;
 
 import static org.hamcrest.MatcherAssert.assertThat;
-import static org.junit.Assert.assertEquals;
+import static org.hamcrest.Matchers.hasSize;
+import static org.junit.jupiter.api.Assertions.assertEquals;
 
 import com.google.common.base.Predicates;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
-import org.hamcrest.Matchers;
 import org.jenkinsci.plugins.workflow.actions.ArgumentsAction;
 import org.jenkinsci.plugins.workflow.cps.CpsFlowDefinition;
 import org.jenkinsci.plugins.workflow.cps.nodes.StepStartNode;
@@ -40,47 +40,56 @@ import org.jenkinsci.plugins.workflow.graphanalysis.NodeStepTypePredicate;
 import org.jenkinsci.plugins.workflow.job.WorkflowJob;
 import org.jenkinsci.plugins.workflow.job.WorkflowRun;
 import org.jenkinsci.plugins.workflow.steps.StepConfigTester;
-import org.junit.ClassRule;
-import org.junit.Rule;
-import org.junit.Test;
-import org.jvnet.hudson.test.BuildWatcher;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.RegisterExtension;
 import org.jvnet.hudson.test.JenkinsRule;
+import org.jvnet.hudson.test.junit.jupiter.BuildWatcherExtension;
+import org.jvnet.hudson.test.junit.jupiter.WithJenkins;
 
-public class KeepEnvStepTest {
+@WithJenkins
+class KeepEnvStepTest {
 
-    @ClassRule
-    public static BuildWatcher buildWatcher = new BuildWatcher();
+    @SuppressWarnings("unused")
+    @RegisterExtension
+    private static final BuildWatcherExtension BUILD_WATCHER = new BuildWatcherExtension();
 
-    @Rule
-    public JenkinsRule j = new JenkinsRule();
+    private JenkinsRule j;
+
+    @BeforeEach
+    void setUp(JenkinsRule rule) {
+        j = rule;
+    }
 
     @Test
-    public void keepOnlyThePassedVariables() throws Exception {
+    void keepOnlyThePassedVariables() throws Exception {
         WorkflowJob p = j.jenkins.createProject(WorkflowJob.class, "p");
         p.setDefinition(new CpsFlowDefinition(
-                "env.A = 'value-a'\n" + "env.B = 'value-b'\n"
-                        + "env.C = 'value-c'\n"
-                        + "node {\n"
-                        + "  isUnix() ? sh('echo a-b-c-1 A=$A B=$B C=$C D=$D end') : bat('echo a-b-c-1 A=%A% B=%B% C=%C% D=%D% end')\n"
-                        + "  keepEnv(['A', 'B']){\n"
-                        + "    isUnix() ? sh('echo only-a-b A=$A B=$B C=$C D=$D end') : bat('echo only-a-b A=%A% B=%B% C=%C% D=%D% end')\n"
-                        + "    withEnv(['D=value-d']){\n"
-                        + "      isUnix() ? sh('echo with-d A=$A B=$B C=$C D=$D end') : bat('echo with-d A=%A% B=%B% C=%C% D=%D% end')\n"
-                        + "      keepEnv(['B', 'D']){\n"
-                        + "        isUnix() ? sh('echo only-b-d A=$A B=$B C=$C D=$D end') : bat('echo only-b-d A=%A% B=%B% C=%C% D=%D% end')\n"
-                        + "      }\n"
-                        + "    }\n"
-                        + "    keepEnv(['A']){\n"
-                        + "      isUnix() ? sh('echo only-a A=$A B=$B C=$C D=$D end') : bat('echo only-a A=%A% B=%B% C=%C% D=%D% end')\n"
-                        + "    }\n"
-                        + "    keepEnv(['B']){\n"
-                        + "      isUnix() ? sh('echo only-b A=$A B=$B C=$C D=$D end') : bat('echo only-b A=%A% B=%B% C=%C% D=%D% end')\n"
-                        + "    }\n"
-                        + "  }\n"
-                        + "  isUnix() ? sh('echo a-b-c-2 A=$A B=$B C=$C D=$D end') : bat('echo a-b-c-2 A=%A% B=%B% C=%C% D=%D% end')\n"
-                        + "}",
+                """
+                        env.A = 'value-a'
+                        env.B = 'value-b'
+                        env.C = 'value-c'
+                        node {
+                          isUnix() ? sh('echo a-b-c-1 A=$A B=$B C=$C D=$D end') : bat('echo a-b-c-1 A=%A% B=%B% C=%C% D=%D% end')
+                          keepEnv(['A', 'B']){
+                            isUnix() ? sh('echo only-a-b A=$A B=$B C=$C D=$D end') : bat('echo only-a-b A=%A% B=%B% C=%C% D=%D% end')
+                            withEnv(['D=value-d']){
+                              isUnix() ? sh('echo with-d A=$A B=$B C=$C D=$D end') : bat('echo with-d A=%A% B=%B% C=%C% D=%D% end')
+                              keepEnv(['B', 'D']){
+                                isUnix() ? sh('echo only-b-d A=$A B=$B C=$C D=$D end') : bat('echo only-b-d A=%A% B=%B% C=%C% D=%D% end')
+                              }
+                            }
+                            keepEnv(['A']){
+                              isUnix() ? sh('echo only-a A=$A B=$B C=$C D=$D end') : bat('echo only-a A=%A% B=%B% C=%C% D=%D% end')
+                            }
+                            keepEnv(['B']){
+                              isUnix() ? sh('echo only-b A=$A B=$B C=$C D=$D end') : bat('echo only-b A=%A% B=%B% C=%C% D=%D% end')
+                            }
+                          }
+                          isUnix() ? sh('echo a-b-c-2 A=$A B=$B C=$C D=$D end') : bat('echo a-b-c-2 A=%A% B=%B% C=%C% D=%D% end')
+                        }""",
                 true));
-        WorkflowRun b = j.assertBuildStatusSuccess(p.scheduleBuild2(0));
+        WorkflowRun b = j.buildAndAssertSuccess(p);
         j.assertLogContains("a-b-c-1 A=value-a B=value-b C=value-c D= end", b);
         j.assertLogContains("only-a-b A=value-a B=value-b C= D= end", b);
         j.assertLogContains("with-d A=value-a B=value-b C= D=value-d end", b);
@@ -94,7 +103,7 @@ public class KeepEnvStepTest {
                         Predicates.and(
                                 new NodeStepTypePredicate("keepEnv"),
                                 n -> n instanceof StepStartNode && !((StepStartNode) n).isBody()));
-        assertThat(coreStepNodes, Matchers.hasSize(4));
+        assertThat(coreStepNodes, hasSize(4));
         assertEquals("A, B", ArgumentsAction.getStepArgumentsAsString(coreStepNodes.get(3)));
         assertEquals("B, D", ArgumentsAction.getStepArgumentsAsString(coreStepNodes.get(2)));
         assertEquals("A", ArgumentsAction.getStepArgumentsAsString(coreStepNodes.get(1)));
@@ -102,7 +111,7 @@ public class KeepEnvStepTest {
     }
 
     @Test
-    public void configRoundTrip() throws Exception {
+    void configRoundTrip() throws Exception {
         configRoundTrip(Collections.emptyList());
         configRoundTrip(Collections.singletonList("VAR"));
         configRoundTrip(Arrays.asList("VAR1", "VAR2"));
